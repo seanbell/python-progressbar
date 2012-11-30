@@ -27,6 +27,7 @@ import os
 import signal
 import sys
 import time
+import uuid
 
 try:
     from fcntl import ioctl
@@ -119,7 +120,7 @@ class ProgressBar(object):
                  'left_justify', 'maxval', 'next_update', 'num_intervals',
                  'poll', 'seconds_elapsed', 'signal_set', 'start_time',
                  'term_width', 'update_interval', 'widgets', '_time_sensitive',
-                 '__iterable', 'attr', 'html_written')
+                 '__iterable', 'attr', 'html_written', 'uuid')
 
     _DEFAULT_MAXVAL = 100
     _DEFAULT_TERMSIZE = 80
@@ -164,6 +165,8 @@ class ProgressBar(object):
         # Set flag so we only write out the HTML once,
         # then update with javascript
         self.html_written = False
+
+        self.uuid = str(uuid.uuid4())
 
         # Install our CSS if we are in an IPython notebook
         if ipython == 'ipython-notebook':
@@ -263,7 +266,7 @@ class ProgressBar(object):
 
 
     def _format_html(self):
-      html = '<div class="pb"><table class="pb ui-widget"><tr>\n'
+      html = '<div class="pb" id="%s"><table class="pb ui-widget"><tr>\n' % self.uuid
       for widget in self.widgets:
         if isinstance(widget, widgets.WidgetHFill):
           td_class = 'pb_widget_fill'
@@ -358,6 +361,7 @@ class ProgressBar(object):
 
         self.start_time = self.last_update_time = time.time()
         self.html_written = False
+        self.finished = False
         self.update(0)
 
         return self
@@ -370,5 +374,9 @@ class ProgressBar(object):
         self.update(self.maxval)
         self.fd.write('\n')
         self.start_time = None
+        if ipython == 'ipython-notebook':
+            from IPython.display import Javascript, display
+            js = "$('div#%s').hide('slow');" % self.uuid
+            display(Javascript(js))
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
