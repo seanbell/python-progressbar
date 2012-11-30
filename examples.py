@@ -7,7 +7,7 @@ import time
 from progressbar import AnimatedMarker, Bar, BouncingBar, Counter, ETA, \
                         FileTransferSpeed, FormatLabel, Percentage, \
                         ProgressBar, ReverseBar, RotatingMarker, \
-                        SimpleProgress, Timer
+                        SimpleProgress, Timer, Attribute
 
 examples = []
 def example(fn):
@@ -186,9 +186,27 @@ def example17():
     for i in pbar((i for i in range(180))):
         time.sleep(0.05)
 
+@example
+def example18():
+    widgets = [Percentage(), ' ', ETA(), ' ', Bar(), ' ',
+               Attribute(['file', 'filenum', 'nfiles'],
+                         'File "%s" (%d/%d)', 'File ? (?/?)'),
+               ' ', FileTransferSpeed()]
+    files = ['one.txt', 'two.txt', 'three.txt', 'four.txt']
+    filesize = 100
+    pbar = ProgressBar(widgets=widgets,
+                       maxval=len(files)*filesize,
+                       attr={'nfiles': len(files)}).start()
+    for n, f in enumerate(files):
+      for i in range(filesize):
+        # do something
+        pbar.update(n*filesize + i, attr={'file': f, 'filenum': n+1})
+        time.sleep(0.05)
+    pbar.finish()
+
 
 if __name__ == '__main__':
     try:
-        for example in examples: example()
+      for example in examples: example()
     except KeyboardInterrupt:
         sys.stdout('\nQuitting examples.\n')
