@@ -24,6 +24,7 @@ from __future__ import division
 
 import datetime
 import math
+import uuid
 
 try:
     from abc import ABCMeta, abstractmethod
@@ -37,6 +38,14 @@ else:
 def format_updatable(updatable, pbar):
     if hasattr(updatable, 'update'): return updatable.update(pbar)
     else: return updatable
+
+def format_updatable_html(updatable, pbar):
+    if hasattr(updatable, 'update_html'): return updatable.update_html(pbar)
+    else: return updatable
+
+def updatable_js(updatable, pbar):
+    if hasattr(updatable, 'update_js'): return updatable.update_js(pbar)
+    else: return None
 
 
 class Widget(AbstractWidget):
@@ -52,6 +61,7 @@ class Widget(AbstractWidget):
 
     TIME_SENSITIVE = False
     __slots__ = ()
+    uuid = None
 
     @abstractmethod
     def update(self, pbar):
@@ -59,6 +69,16 @@ class Widget(AbstractWidget):
 
         pbar - a reference to the calling ProgressBar
         """
+
+    def update_html(self, pbar):
+        if self.uuid is None:
+            self.uuid = str(uuid.uuid4())
+        return '<div id="%s">%s</div>' % (self.uuid, self.update(pbar))
+
+    def update_js(self, pbar):
+        if self.uuid is None:
+            self.uuid = str(uuid.uuid4())
+        return "$('div#%s').text('%s');" % (self.uuid, self.update(pbar))
 
 
 class WidgetHFill(Widget):
@@ -69,8 +89,10 @@ class WidgetHFill(Widget):
     all have the same width, and together will fill the line.
     """
 
+    DEFAULT_WIDTH = 50
+
     @abstractmethod
-    def update(self, pbar, width):
+    def update(self, pbar, width=DEFAULT_WIDTH):
         """Updates the widget providing the total width the widget must fill.
 
         pbar - a reference to the calling ProgressBar
@@ -281,8 +303,7 @@ class Bar(WidgetHFill):
         self.fill = fill
         self.fill_left = fill_left
 
-
-    def update(self, pbar, width):
+    def update(self, pbar, width=WidgetHFill.DEFAULT_WIDTH):
         """Updates the progress bar and its subcomponents."""
 
         left, marked, right = (format_updatable(i, pbar) for i in
@@ -299,6 +320,30 @@ class Bar(WidgetHFill):
             return '%s%s%s' % (left, marked.ljust(width, self.fill), right)
         else:
             return '%s%s%s' % (left, marked.rjust(width, self.fill), right)
+
+
+    def update_html(self, pbar):
+        if self.uuid is None:
+            self.uuid = str(uuid.uuid4())
+        return """
+        <div class="pb_bar" id="%s"></div>
+        <script type="text/javascript">
+            $("div#%s").progressbar({value: 0});
+        </script>
+        """ % (self.uuid, self.uuid)
+
+
+    def update_js(self, pbar):
+        if self.uuid is None:
+            self.uuid = str(uuid.uuid4())
+        return """
+        var $myPB = $("div#{divid}")
+        if ($myPB.hasClass('ui-progressbar')) {{
+            $myPB.progressbar('value', {pbar.currval:d});
+        }} else {{
+            $myPB.progressbar({{value: 0, max: {pbar.maxval:d}}});
+        }}
+        """.format(divid=self.uuid, pbar=pbar)
 
 
 class ReverseBar(Bar):
@@ -322,7 +367,7 @@ class ReverseBar(Bar):
 
 
 class BouncingBar(Bar):
-    def update(self, pbar, width):
+    def update(self, pbar, width=WidgetHFill.DEFAULT_WIDTH):
         """Updates the progress bar and its subcomponents."""
 
         left, marker, right = (format_updatable(i, pbar) for i in
