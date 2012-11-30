@@ -88,14 +88,14 @@ class ProgressBar(object):
                  'left_justify', 'maxval', 'next_update', 'num_intervals',
                  'poll', 'seconds_elapsed', 'signal_set', 'start_time',
                  'term_width', 'update_interval', 'widgets', '_time_sensitive',
-                 '__iterable')
+                 '__iterable', 'attr')
 
     _DEFAULT_MAXVAL = 100
     _DEFAULT_TERMSIZE = 80
     _DEFAULT_WIDGETS = [widgets.Percentage(), ' ', widgets.Bar()]
 
     def __init__(self, maxval=None, widgets=None, term_width=None, poll=1,
-                 left_justify=True, fd=sys.stderr):
+                 left_justify=True, fd=sys.stderr, attr={}):
         """Initializes a progress bar with sane defaults."""
 
         # Don't share a reference with any other progress bars
@@ -128,6 +128,7 @@ class ProgressBar(object):
         self.seconds_elapsed = 0
         self.start_time = None
         self.update_interval = 1
+        self.attr = attr
 
 
     def __call__(self, iterable):
@@ -234,7 +235,7 @@ class ProgressBar(object):
                                     for w in self.widgets)
 
 
-    def update(self, value=None):
+    def update(self, value=None, attr={}):
         """Updates the ProgressBar to a new value."""
 
         if value is not None and value is not UnknownLength:
@@ -245,6 +246,7 @@ class ProgressBar(object):
 
             self.currval = value
 
+        self.attr.update(attr)
 
         if not self._need_update(): return
         if self.start_time is None:

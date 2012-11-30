@@ -177,6 +177,38 @@ class Counter(Widget):
         return self.format_string % pbar.currval
 
 
+class Attribute(Widget):
+    """Displays the values of ProgressBar attributes.
+
+    attr_name - ProgressBar attribute dictionary key or list of keys
+    format_string - Format for the output. Attributes are looked up according
+      to attr_name and then used as a tuple with this format string, i.e.
+      format_string % attr_tuple
+    fallback - If an attribute lookup fails, this string is displayed instead.
+
+    """
+
+    __slots__ = ('attr_name', 'format_string', 'fallback')
+
+    def __init__(self, attr_name, format='%s', fallback='?'):
+        self.attr_name = attr_name
+        self.format_string = format
+        self.fallback = fallback
+
+    def update(self, pbar):
+        try:
+          if isinstance(self.attr_name, basestring) or len(self.attr_name) == 1:
+            # If attr_name is just a string or a single item,
+            # use it as the key as is
+            format_vars = (pbar.attr[self.attr_name],)
+          else:
+            # else, expand it as a tuple of attributes
+            format_vars = tuple([pbar.attr[a] for a in self.attr_name])
+          return self.format_string % format_vars
+        except KeyError:
+          return self.fallback
+
+
 class Percentage(Widget):
     """Displays the current percentage as a number with a percent sign."""
 
