@@ -356,6 +356,7 @@ class ProgressBar(object):
 
         self.start_time = self.last_update_time = time.time()
         self.html_written = False
+        self.finished = False
         self.update(0)
 
         return self
