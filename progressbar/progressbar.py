@@ -355,6 +355,7 @@ class ProgressBar(object):
 
 
         self.start_time = self.last_update_time = time.time()
+        self.html_written = False
         self.update(0)
 
         return self
@@ -366,5 +367,6 @@ class ProgressBar(object):
         self.finished = True
         self.update(self.maxval)
         self.fd.write('\n')
+        self.start_time = None
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
