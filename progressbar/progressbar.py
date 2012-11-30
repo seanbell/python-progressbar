@@ -37,6 +37,37 @@ except ImportError:
 
 import widgets
 
+# Test to see if we are in an IPython session.
+try:
+  ipython = get_ipython().config['KernelApp']['parent_appname']
+except NameError:
+  ipython = None
+
+ipython_notebook_css = """
+td.pb_widget {
+    width: auto;
+}
+td.pb_widget_fill {
+    width: 100%;
+}
+table.pb {
+    font-family: monospace;
+    border: 0;
+    margin: 0;
+}
+table.pb tr { border: 0; }
+table.pb td {
+    white-space: nowrap;
+    border: 0;
+}
+div.pb {
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+div.pb_bar {
+    height: 1.5em;
+}
+""".replace('\n', ' ')
 
 class UnknownLength: pass
 
@@ -88,7 +119,7 @@ class ProgressBar(object):
                  'left_justify', 'maxval', 'next_update', 'num_intervals',
                  'poll', 'seconds_elapsed', 'signal_set', 'start_time',
                  'term_width', 'update_interval', 'widgets', '_time_sensitive',
-                 '__iterable')
+                 '__iterable', 'html_written')
 
     _DEFAULT_MAXVAL = 100
     _DEFAULT_TERMSIZE = 80
@@ -128,6 +159,17 @@ class ProgressBar(object):
         self.seconds_elapsed = 0
         self.start_time = None
         self.update_interval = 1
+
+        # Set flag so we only write out the HTML once,
+        # then update with javascript
+        self.html_written = False
+
+        # Install our CSS if we are in an IPython notebook
+        if ipython == 'ipython-notebook':
+            from IPython.display import Javascript, display
+            display(Javascript('$("head").append("<style>%s</style>")' %
+                               ipython_notebook_css))
+
 
 
     def __call__(self, iterable):
@@ -219,6 +261,21 @@ class ProgressBar(object):
         else: return widgets.rjust(self.term_width)
 
 
+    def _format_html(self):
+      html = '<div class="pb"><table class="pb ui-widget"><tr>\n'
+      for widget in self.widgets:
+        if isinstance(widget, widgets.WidgetHFill):
+          td_class = 'pb_widget_fill'
+        else:
+          td_class = 'pb_widget'
+
+        html += ('<td class="%s">' % td_class) + \
+                widgets.format_updatable_html(widget, self) + \
+                '</td>\n'
+      html += '</tr></table><div>'
+      return html
+
+
     def _need_update(self):
         """Returns whether the ProgressBar should redraw the line."""
         if self.currval >= self.next_update or self.finished: return True
@@ -253,8 +310,24 @@ class ProgressBar(object):
         now = time.time()
         self.seconds_elapsed = now - self.start_time
         self.next_update = self.currval + self.update_interval
-        self.fd.write('\r' + self._format_line())
-        self.fd.flush()
+
+        if ipython == 'ipython-notebook':
+            if not self.html_written:
+                # We have yet to display the HTML, do that first
+                from IPython.display import HTML, display
+                display(HTML(self._format_html()))
+                self.html_written = True
+            else:
+                # The HTML has been written once, now update with JS
+                from IPython.display import Javascript, display
+                for widget in self.widgets:
+                    js = widgets.updatable_js(widget, self)
+                    if js:
+                        display(Javascript(js))
+        else:
+            self.fd.write('\r' + self._format_line())
+            self.fd.flush()
+
         self.last_update_time = now
 
 
