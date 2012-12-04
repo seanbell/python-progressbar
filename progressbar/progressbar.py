@@ -41,7 +41,7 @@ import widgets
 # Test to see if we are in an IPython session.
 try:
   ipython = get_ipython().config['KernelApp']['parent_appname']
-except NameError:
+except (NameError, KeyError):
   ipython = None
 
 ipython_notebook_css = """
