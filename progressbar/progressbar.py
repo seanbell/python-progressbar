@@ -171,8 +171,8 @@ class ProgressBar(object):
         # Install our CSS if we are in an IPython notebook
         if ipython == 'ipython-notebook':
             from IPython.display import Javascript, display
-            display(Javascript('$("head").append("<style>%s</style>")' %
-                               ipython_notebook_css))
+            display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
+                               (self.uuid,ipython_notebook_css)))
 
 
 
@@ -380,7 +380,8 @@ class ProgressBar(object):
             js="var element = document.getElementById('%s'); element.parentNode.removeChild(element);" % self.uuid
             display(Javascript(js))
 
-            #Then also remove its trace from the cell output (so it doesn't get stored)
+            #Then also remove its trace from the cell output (so it doesn't get
+            #stored with the notebook)
             #This needs to be done for all widgets as well
             uuids = [str(self.uuid)]
             uuids += [w.uuid for w in self.widgets if isinstance(w,widgets.Widget)]
@@ -408,9 +409,6 @@ class ProgressBar(object):
               IPython.notebook.get_selected_cell().output_area.outputs = fout;
             '''%str(uuids)
             display(Javascript(js))
-            print js
-            sys.stdout.flush()
-
 
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
