@@ -376,7 +376,11 @@ class ProgressBar(object):
         self.start_time = None
         if ipython == 'ipython-notebook':
             from IPython.display import Javascript, display
-            js = "$('div#%s').hide('slow');" % self.uuid
+            #First delete the node that held the progress bar from the page
+            js="var element = document.getElementById('%s'); element.parentNode.removeChild(element);" % self.uuid
+            display(Javascript(js))
+            #Then also remove its trace from the cell output (so it doesn't get stored)
+            js = "var cell = IPython.notebook.get_selected_cell(); cell.clear_output(false,false,true);"
             display(Javascript(js))
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
