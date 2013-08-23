@@ -174,33 +174,34 @@ class ProgressBar(object):
             display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
                                (self.uuid,ipython_notebook_css)))
             
-            #Also add a function that removes progressbar output from the cells
+            # Also add a function that removes progressbar output from the cells
             js = '''
-                  //%s -- used to remove this code blob in the end
-                  IPython.OutputArea.prototype.cleanProgressBar = function(uuids){
+                  // %s -- used to remove this code blob in the end
+                  IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
+                      // filter by uuid-strings 
+                      var myfilter = function(output) { 
+                          var nuids = uuids.length;
+                          for (var i=0; i<nuids; i++) {
+                              if (output.hasOwnProperty('html')) {
+                                  if (output.html.indexOf(uuids[i]) != -1) {
+                                      return false;
+                                  }
+                              }
+                              if (output.hasOwnProperty('javascript')) {
+                                  if (output.javascript.indexOf(uuids[i]) != -1) {
+                                      return false;
+                                  }
+                              }
+                          }
+                          // keep all others
+                          return true;
+                      };
 
-                  //fitler by uuid-strings 
-                  var myfilter = function(output) { 
-                      var nuids = uuids.length;
-                      for (var i=0; i<nuids; i++){
-                          if (output.hasOwnProperty('html'))
-                            if (output.html.indexOf(uuids[i]) != -1)
-                              return false;
-                          if (output.hasOwnProperty('javascript'))
-                            if (output.javascript.indexOf(uuids[i]) != -1) 
-                              return false;
-                      }
-                    //keep all others
-                    return true;
-                  };
-
-                  //Filter the ouputs
-                  this.outputs = this.outputs.filter(myfilter);
-                 }'''%self.uuid
+                      // Filter the ouputs
+                      this.outputs = this.outputs.filter(myfilter);
+                };
+                ''' % self.uuid
             display(Javascript(js))
-
-
-
 
     def __call__(self, iterable):
         """Use a ProgressBar to iterate through an iterable."""
