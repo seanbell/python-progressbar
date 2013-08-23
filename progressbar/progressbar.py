@@ -401,21 +401,22 @@ class ProgressBar(object):
         self.update(self.maxval)
         self.start_time = None
 
-        #Clean up notebook stuff, quite differently from regular
+        # Clean up notebook stuff, quite differently from regular
         if not ipython == 'ipython-notebook':
             self.fd.write('\n')
         else:
             from IPython.display import Javascript, display
-            #First delete the node that held the progress bar from the page
-            js="var element = document.getElementById('%s'); element.parentNode.removeChild(element);" % self.uuid
+            # First delete the node that held the progress bar from the page
+            js = """var element = document.getElementById('%s');
+                    element.parentNode.removeChild(element);""" % self.uuid
             display(Javascript(js))
 
-            #Then also remove its trace from the cell output (so it doesn't get
-            #stored with the notebook). This needs to be done for all widgets as
-            #well as for progressBar
+            # Then also remove its trace from the cell output (so it doesn't get
+            # stored with the notebook). This needs to be done for all widgets as
+            # well as for progressBar
             uuids = [str(self.uuid)]
-            uuids += [w.uuid for w in self.widgets if isinstance(w,widgets.Widget)]
-            display(Javascript('this.cleanProgressBar(%s)'%uuids))
+            uuids += [w.uuid for w in self.widgets if isinstance(w, widgets.Widget)]
+            display(Javascript('this.cleanProgressBar(%s)' % uuids))
 
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
