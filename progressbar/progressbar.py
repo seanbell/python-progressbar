@@ -173,6 +173,32 @@ class ProgressBar(object):
             from IPython.display import Javascript, display
             display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
                                (self.uuid,ipython_notebook_css)))
+            
+            #Also add a function that removes progressbar output from the cells
+            js = '''
+                  //%s -- used to remove this code blob in the end
+                  IPython.OutputArea.prototype.cleanProgressBar = function(uuids){
+
+                  //fitler by uuid-strings 
+                  var myfilter = function(output) { 
+                      var nuids = uuids.length;
+                      for (var i=0; i<nuids; i++){
+                          if (output.hasOwnProperty('html'))
+                            if (output.html.indexOf(uuids[i]) != -1)
+                              return false;
+                          if (output.hasOwnProperty('javascript'))
+                            if (output.javascript.indexOf(uuids[i]) != -1) 
+                              return false;
+                      }
+                    //keep all others
+                    return true;
+                  };
+
+                  //Filter the ouputs
+                  this.outputs = this.outputs.filter(myfilter);
+                 }'''%self.uuid
+            display(Javascript(js))
+
 
 
 
