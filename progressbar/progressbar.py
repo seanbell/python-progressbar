@@ -372,43 +372,23 @@ class ProgressBar(object):
 
         self.finished = True
         self.update(self.maxval)
-        self.fd.write('\n')
         self.start_time = None
-        if ipython == 'ipython-notebook':
+
+        #Clean up notebook stuff, quite differently from regular
+        if not ipython == 'ipython-notebook':
+            self.fd.write('\n')
+        else:
             from IPython.display import Javascript, display
             #First delete the node that held the progress bar from the page
             js="var element = document.getElementById('%s'); element.parentNode.removeChild(element);" % self.uuid
             display(Javascript(js))
 
             #Then also remove its trace from the cell output (so it doesn't get
-            #stored with the notebook)
-            #This needs to be done for all widgets as well
+            #stored with the notebook). This needs to be done for all widgets as
+            #well as for progressBar
             uuids = [str(self.uuid)]
             uuids += [w.uuid for w in self.widgets if isinstance(w,widgets.Widget)]
-            js = '''
-              //fitler by uuid-strings 
-              var myfilter = function(output) { 
-                //check for all different uids
-                var uuids = %s;
-                var nuids = uuids.length;
-                for (var i=0; i<nuids; i++){
-                  if (output.hasOwnProperty('html'))
-                    if (output.html.indexOf(uuids[i]) != -1)
-                      return false;
-                  if (output.hasOwnProperty('javascript'))
-                    if (output.javascript.indexOf(uuids[i]) != -1) 
-                      return false;
-                }
-                //keep all others
-                return true;
-              };
-
-              //Get the filtered outputs
-              var fout = IPython.notebook.get_selected_cell().output_area.outputs.filter(myfilter);
-              //and assign
-              IPython.notebook.get_selected_cell().output_area.outputs = fout;
-            '''%str(uuids)
-            display(Javascript(js))
+            display(Javascript('this.cleanProgressBar(%s)'%uuids))
 
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
