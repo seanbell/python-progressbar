@@ -328,9 +328,9 @@ class Bar(WidgetHFill):
         return """
         <div class="pb_bar" id="%s"></div>
         <script type="text/javascript">
-            $("div#%s").progressbar({value: 0});
+            $("div#%s").progressbar({value: 0, max: %d});
         </script>
-        """ % (self.uuid, self.uuid)
+        """ % (self.uuid, self.uuid,pbar.maxval)
 
 
     def update_js(self, pbar):

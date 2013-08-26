@@ -39,10 +39,12 @@ except ImportError:
 import widgets
 
 # Test to see if we are in an IPython session.
-try:
-  ipython = get_ipython().config['KernelApp']['parent_appname']
-except (NameError, KeyError):
-  ipython = None
+ipython = None
+for key in ['KernelApp','IPKernelApp']:
+  try:
+    ipython = get_ipython().config[key]['parent_appname']
+  except (NameError, KeyError):
+    pass
 
 ipython_notebook_css = """
 td.pb_widget {
