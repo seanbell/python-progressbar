@@ -124,7 +124,7 @@ class ProgressBar(object):
 
     _DEFAULT_MAXVAL = 100
     _DEFAULT_TERMSIZE = 80
-    _DEFAULT_WIDGETS = [widgets.Percentage(), ' ', widgets.Bar()]
+    _DEFAULT_WIDGETS = [widgets.Percentage, widgets.Bar]
 
     def __init__(self, maxval=None, widgets=None, term_width=None, poll=1,
                  left_justify=True, fd=sys.stdout, attr={}):
@@ -132,7 +132,7 @@ class ProgressBar(object):
 
         # Don't share a reference with any other progress bars
         if widgets is None:
-            widgets = list(self._DEFAULT_WIDGETS)
+            widgets = [widget() for widget in self._DEFAULT_WIDGETS]
 
         self.maxval = maxval
         self.widgets = widgets
