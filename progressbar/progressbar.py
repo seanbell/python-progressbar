@@ -39,10 +39,12 @@ except ImportError:
 import widgets
 
 # Test to see if we are in an IPython session.
-try:
-  ipython = get_ipython().config['KernelApp']['parent_appname']
-except (NameError, KeyError):
-  ipython = None
+ipython = None
+for key in ['KernelApp','IPKernelApp']:
+  try:
+    ipython = get_ipython().config[key]['parent_appname']
+  except (NameError, KeyError):
+    pass
 
 ipython_notebook_css = """
 td.pb_widget {
@@ -124,7 +126,7 @@ class ProgressBar(object):
 
     _DEFAULT_MAXVAL = 100
     _DEFAULT_TERMSIZE = 80
-    _DEFAULT_WIDGETS = [widgets.Percentage(), ' ', widgets.Bar()]
+    _DEFAULT_WIDGETS = [widgets.Percentage, widgets.Bar]
 
     def __init__(self, maxval=None, widgets=None, term_width=None, poll=1,
                  left_justify=True, fd=sys.stdout, attr={}):
@@ -132,7 +134,7 @@ class ProgressBar(object):
 
         # Don't share a reference with any other progress bars
         if widgets is None:
-            widgets = list(self._DEFAULT_WIDGETS)
+            widgets = [widget() for widget in self._DEFAULT_WIDGETS]
 
         self.maxval = maxval
         self.widgets = widgets
@@ -171,10 +173,37 @@ class ProgressBar(object):
         # Install our CSS if we are in an IPython notebook
         if ipython == 'ipython-notebook':
             from IPython.display import Javascript, display
-            display(Javascript('$("head").append("<style>%s</style>")' %
-                               ipython_notebook_css))
+            display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
+                               (self.uuid,ipython_notebook_css)))
+            
+            # Also add a function that removes progressbar output from the cells
+            js = '''
+                  // %s -- used to remove this code blob in the end
+                  IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
+                      // filter by uuid-strings 
+                      var myfilter = function(output) { 
+                          var nuids = uuids.length;
+                          for (var i=0; i<nuids; i++) {
+                              if (output.hasOwnProperty('html')) {
+                                  if (output.html.indexOf(uuids[i]) != -1) {
+                                      return false;
+                                  }
+                              }
+                              if (output.hasOwnProperty('javascript')) {
+                                  if (output.javascript.indexOf(uuids[i]) != -1) {
+                                      return false;
+                                  }
+                              }
+                          }
+                          // keep all others
+                          return true;
+                      };
 
-
+                      // Filter the ouputs
+                      this.outputs = this.outputs.filter(myfilter);
+                };
+                ''' % self.uuid
+            display(Javascript(js))
 
     def __call__(self, iterable):
         """Use a ProgressBar to iterate through an iterable."""
@@ -372,11 +401,24 @@ class ProgressBar(object):
 
         self.finished = True
         self.update(self.maxval)
-        self.fd.write('\n')
         self.start_time = None
-        if ipython == 'ipython-notebook':
+
+        # Clean up notebook stuff, quite differently from regular
+        if not ipython == 'ipython-notebook':
+            self.fd.write('\n')
+        else:
             from IPython.display import Javascript, display
-            js = "$('div#%s').hide('slow');" % self.uuid
+            # First delete the node that held the progress bar from the page
+            js = """var element = document.getElementById('%s');
+                    element.parentNode.removeChild(element);""" % self.uuid
             display(Javascript(js))
+
+            # Then also remove its trace from the cell output (so it doesn't get
+            # stored with the notebook). This needs to be done for all widgets as
+            # well as for progressBar
+            uuids = [str(self.uuid)]
+            uuids += [w.uuid for w in self.widgets if isinstance(w, widgets.Widget)]
+            display(Javascript('this.cleanProgressBar(%s)' % uuids))
+
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
