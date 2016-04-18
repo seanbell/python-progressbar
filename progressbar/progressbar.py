@@ -41,10 +41,19 @@ import widgets
 # Test to see if we are in an IPython session.
 ipython = None
 for key in ['KernelApp','IPKernelApp']:
-  try:
-    ipython = get_ipython().config[key]['parent_appname']
-  except (NameError, KeyError):
-    pass
+    try:
+        ipython = get_ipython().config[key]['parent_appname']
+    except (NameError, KeyError):
+        pass
+
+# fix for IPython v4
+if not ipython:
+    try:
+        from ipykernel.zmqshell import ZMQInteractiveShell
+        if isinstance(get_ipython(), ZMQInteractiveShell):
+            ipython = 'ipython-notebook'
+    except NameError:
+        pass
 
 ipython_notebook_css = """
 td.pb_widget {
@@ -175,13 +184,13 @@ class ProgressBar(object):
             from IPython.display import Javascript, display
             display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
                                (self.uuid,ipython_notebook_css)))
-            
+
             # Also add a function that removes progressbar output from the cells
             js = '''
                   // %s -- used to remove this code blob in the end
                   IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
-                      // filter by uuid-strings 
-                      var myfilter = function(output) { 
+                      // filter by uuid-strings
+                      var myfilter = function(output) {
                           var nuids = uuids.length;
                           for (var i=0; i<nuids; i++) {
                               if (output.hasOwnProperty('html')) {
