@@ -55,6 +55,8 @@ if not ipython:
     except NameError:
         pass
 
+print 'ipython=%r' % ipython
+
 ipython_notebook_css = """
 td.pb_widget {
     width: auto;
