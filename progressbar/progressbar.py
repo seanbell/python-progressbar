@@ -39,27 +39,21 @@ except ImportError:
 import widgets
 
 # Test to see if we are in an IPython session.
-ipython = None
-for key in ['KernelApp','IPKernelApp']:
-    try:
-        ipython = get_ipython().config[key]['parent_appname']
-    except (NameError, KeyError):
-        pass
-
-# fix for IPython v4
-if not ipython:
+def _is_ipython_notebook():
+    for key in ['KernelApp','IPKernelApp']:
+        try:
+            if get_ipython().config[key]['parent_appname'] == "ipython-notebook":
+                return True
+        except (NameError, KeyError):
+            pass
     try:
         from ipykernel.zmqshell import ZMQInteractiveShell
         if isinstance(get_ipython(), ZMQInteractiveShell):
-            ipython = 'ipython-notebook'
+            return True
     except NameError:
         pass
+    return False
 
-try:
-    print 'get_ipython=%r' % get_ipython()
-except NameError:
-    pass
-print 'ipython=%r' % ipython
 
 ipython_notebook_css = """
 td.pb_widget {
@@ -186,7 +180,7 @@ class ProgressBar(object):
         self.uuid = str(uuid.uuid4())
 
         # Install our CSS if we are in an IPython notebook
-        if ipython == 'ipython-notebook':
+        if _is_ipython_notebook():
             from IPython.display import Javascript, display
             display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
                                (self.uuid,ipython_notebook_css)))
@@ -360,7 +354,7 @@ class ProgressBar(object):
         self.seconds_elapsed = now - self.start_time
         self.next_update = self.currval + self.update_interval
 
-        if ipython == 'ipython-notebook':
+        if _is_ipython_notebook():
             if not self.html_written:
                 # We have yet to display the HTML, do that first
                 from IPython.display import HTML, display
@@ -419,7 +413,7 @@ class ProgressBar(object):
         self.start_time = None
 
         # Clean up notebook stuff, quite differently from regular
-        if not ipython == 'ipython-notebook':
+        if not _is_ipython_notebook():
             self.fd.write('\n')
         else:
             from IPython.display import Javascript, display
