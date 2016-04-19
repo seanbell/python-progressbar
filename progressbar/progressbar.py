@@ -197,16 +197,18 @@ class ProgressBar(object):
 
                     // filter by uuid-strings
                     var myfilter = function(output) {
-                        var nuids = uuids.length;
-                        for (var i=0; i<nuids; i++) {
-                            if (output.data.hasOwnProperty('text/html')) {
-                                if (output.data['text/html'].indexOf(uuids[i]) != -1) {
-                                    return false;
+                        if (output.hasOwnProperty('data')) {
+                            var nuids = uuids.length;
+                            for (var i=0; i<nuids; i++) {
+                                if (output.data.hasOwnProperty('text/html')) {
+                                    if (output.data['text/html'].indexOf(uuids[i]) != -1) {
+                                        return false;
+                                    }
                                 }
-                            }
-                            if (output.data.hasOwnProperty('application/javascript')) {
-                                if (output.data['application/javascript'].indexOf(uuids[i]) != -1) {
-                                    return false;
+                                if (output.data.hasOwnProperty('application/javascript')) {
+                                    if (output.data['application/javascript'].indexOf(uuids[i]) != -1) {
+                                        return false;
+                                    }
                                 }
                             }
                         }
