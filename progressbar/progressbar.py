@@ -431,5 +431,9 @@ class ProgressBar(object):
             uuids += [w.uuid for w in self.widgets if isinstance(w, widgets.Widget)]
             display(Javascript('this.cleanProgressBar(%s)' % uuids))
 
+            # Save the finished line so we can see how much time it took
+            self.fd.write(self._format_line() + '\n')
+            self.fd.flush()
+
         if self.signal_set:
             signal.signal(signal.SIGWINCH, signal.SIG_DFL)
