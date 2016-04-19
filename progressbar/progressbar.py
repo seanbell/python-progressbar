@@ -40,19 +40,24 @@ import widgets
 
 # Test to see if we are in an IPython session.
 def _is_ipython_notebook():
-    for key in ['KernelApp','IPKernelApp']:
-        try:
-            if get_ipython().config[key]['parent_appname'] == "ipython-notebook":
-                return True
-        except (NameError, KeyError):
-            pass
-    try:
-        from ipykernel.zmqshell import ZMQInteractiveShell
-        if isinstance(get_ipython(), ZMQInteractiveShell):
-            return True
-    except NameError:
-        pass
+    # Right now, each javascript call creates an extra div.output_area in the
+    # output, which can accumulate with lots of progress bars.  Until this is
+    # fixed, we'll just use the plaintext bars.
     return False
+
+    #for key in ['KernelApp','IPKernelApp']:
+    #    try:
+    #        if get_ipython().config[key]['parent_appname'] == "ipython-notebook":
+    #            return True
+    #    except (NameError, KeyError):
+    #        pass
+    #try:
+    #    from ipykernel.zmqshell import ZMQInteractiveShell
+    #    if isinstance(get_ipython(), ZMQInteractiveShell):
+    #        return True
+    #except NameError:
+    #    pass
+    #return False
 
 
 ipython_notebook_css = """
@@ -193,8 +198,6 @@ class ProgressBar(object):
             js = '''
                 // %s -- used to remove this code blob in the end
                 IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
-                    console.log("outputs", this.outputs);
-
                     // filter by uuid-strings
                     var myfilter = function(output) {
                         if (output.hasOwnProperty('data')) {
@@ -218,7 +221,6 @@ class ProgressBar(object):
 
                     // Filter the ouputs
                     this.outputs = this.outputs.filter(myfilter);
-                    debugger;
                 };
             ''' % self.uuid
             display(Javascript(js))
