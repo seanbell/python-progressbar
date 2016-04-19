@@ -77,7 +77,10 @@ div.pb {
     border-radius: 3px;
 }
 div.pb_bar {
-    height: 1.5em;
+    height: 1.1em;
+}
+div.pb_bar > div.ui-progressbar-value {
+    margin: 0;
 }
 """.replace('\n', ' ')
 
