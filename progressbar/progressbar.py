@@ -193,7 +193,8 @@ class ProgressBar(object):
             js = '''
                 // %s -- used to remove this code blob in the end
                 IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
-                    debugger;
+                    console.log("outputs", outputs);
+
                     // filter by uuid-strings
                     var myfilter = function(output) {
                         var nuids = uuids.length;
@@ -215,6 +216,11 @@ class ProgressBar(object):
 
                     // Filter the ouputs
                     this.outputs = this.outputs.filter(myfilter);
+
+                    // Remove empty outputs
+                    $("div.output_subarea.output_javascript.rendered_html:empty").forEach(function() {
+                        $(this).parent().remove();
+                    });
                 };
             ''' % self.uuid
             display(Javascript(js))
