@@ -184,9 +184,9 @@ class ProgressBar(object):
 
         # Install our CSS if we are in an IPython notebook
         if _is_ipython_notebook():
-            from IPython.display import Javascript, display
-            display(Javascript('//%s\n$("head").append("<style>%s</style>")' %
-                               (self.uuid,ipython_notebook_css)))
+            from IPython.display import display_javascript
+            display_javascript('//%s\n$("head").append("<style>%s</style>")' %
+                               (self.uuid,ipython_notebook_css))
 
             # Also add a function that removes progressbar output from the cells
             js = '''
@@ -215,7 +215,7 @@ class ProgressBar(object):
                       this.outputs = this.outputs.filter(myfilter);
                 };
                 ''' % self.uuid
-            display(Javascript(js))
+            display_javascript(js)
 
     def __call__(self, iterable):
         """Use a ProgressBar to iterate through an iterable."""
@@ -360,16 +360,16 @@ class ProgressBar(object):
         if _is_ipython_notebook():
             if not self.html_written:
                 # We have yet to display the HTML, do that first
-                from IPython.display import HTML, display
-                display(HTML(self._format_html()))
+                from IPython.display import display_html
+                display_html(self._format_html())
                 self.html_written = True
             else:
                 # The HTML has been written once, now update with JS
-                from IPython.display import Javascript, display
+                from IPython.display import display_javascript
                 for widget in self.widgets:
                     js = widgets.updatable_js(widget, self)
                     if js:
-                        display(Javascript(js))
+                        display_javascript(js)
         else:
             self.fd.write('\r' + self._format_line())
             self.fd.flush()
@@ -419,20 +419,20 @@ class ProgressBar(object):
         if not _is_ipython_notebook():
             self.fd.write('\n')
         else:
-            from IPython.display import Javascript, display
+            from IPython.display import display_javascript
             # First delete the node that held the progress bar from the page
             js = """var element = document.getElementById('%s');
                     var parent = element.parentNode
                     parent.removeChild(element);
                     parent.parentElement.remove();""" % self.uuid
-            display(Javascript(js))
+            display_javascript(js)
 
             # Then also remove its trace from the cell output (so it doesn't get
             # stored with the notebook). This needs to be done for all widgets as
             # well as for progressBar
             uuids = [str(self.uuid)]
             uuids += [w.uuid for w in self.widgets if isinstance(w, widgets.Widget)]
-            display(Javascript('this.cleanProgressBar(%s)' % uuids))
+            display_javascript('this.cleanProgressBar(%s)' % uuids)
 
             # Save the finished line so we can see how much time it took
             self.fd.write(self._format_line() + '\n')
