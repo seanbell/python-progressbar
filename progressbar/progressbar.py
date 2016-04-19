@@ -360,8 +360,8 @@ class ProgressBar(object):
         if _is_ipython_notebook():
             if not self.html_written:
                 # We have yet to display the HTML, do that first
-                from IPython.display import display_html
-                display_html(self._format_html())
+                from IPython.display import display, HTML
+                display(HTML(self._format_html()))
                 self.html_written = True
             else:
                 # The HTML has been written once, now update with JS
