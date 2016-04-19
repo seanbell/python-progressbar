@@ -191,33 +191,31 @@ class ProgressBar(object):
 
             # Also add a function that removes progressbar output from the cells
             js = '''
-                  // %s -- used to remove this code blob in the end
-                  require(["notebook/js/outputarea"], function(a) {
-                    console.log("setting up cleanProgressBar", a);
-                    IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
-                        // filter by uuid-strings
-                        var myfilter = function(output) {
-                            var nuids = uuids.length;
-                            for (var i=0; i<nuids; i++) {
-                                if (output.hasOwnProperty('html')) {
-                                    if (output.html.indexOf(uuids[i]) != -1) {
-                                        return false;
-                                    }
-                                }
-                                if (output.hasOwnProperty('javascript')) {
-                                    if (output.javascript.indexOf(uuids[i]) != -1) {
-                                        return false;
-                                    }
+                // %s -- used to remove this code blob in the end
+                IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
+                    debugger;
+                    // filter by uuid-strings
+                    var myfilter = function(output) {
+                        var nuids = uuids.length;
+                        for (var i=0; i<nuids; i++) {
+                            if (output.hasOwnProperty('html')) {
+                                if (output.html.indexOf(uuids[i]) != -1) {
+                                    return false;
                                 }
                             }
-                            // keep all others
-                            return true;
-                        };
-
-                        // Filter the ouputs
-                        this.outputs = this.outputs.filter(myfilter);
+                            if (output.hasOwnProperty('javascript')) {
+                                if (output.javascript.indexOf(uuids[i]) != -1) {
+                                    return false;
+                                }
+                            }
+                        }
+                        // keep all others
+                        return true;
                     };
-                });
+
+                    // Filter the ouputs
+                    this.outputs = this.outputs.filter(myfilter);
+                };
             ''' % self.uuid
             display(Javascript(js))
 
