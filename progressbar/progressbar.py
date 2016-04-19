@@ -192,8 +192,8 @@ class ProgressBar(object):
             # Also add a function that removes progressbar output from the cells
             js = '''
                   // %s -- used to remove this code blob in the end
-                  require("notebook/js/outputarea", function() {
-                    console.log("setting up cleanProgressBar");
+                  require(["notebook/js/outputarea"], function(a) {
+                    console.log("setting up cleanProgressBar", a);
                     IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
                         // filter by uuid-strings
                         var myfilter = function(output) {
