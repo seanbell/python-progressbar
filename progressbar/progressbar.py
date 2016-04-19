@@ -218,11 +218,7 @@ class ProgressBar(object):
 
                     // Filter the ouputs
                     this.outputs = this.outputs.filter(myfilter);
-
-                    // Remove empty outputs
-                    $("div.output_subarea.output_javascript.rendered_html:empty").forEach(function() {
-                        $(this).parent().remove();
-                    });
+                    debugger;
                 };
             ''' % self.uuid
             display(Javascript(js))
