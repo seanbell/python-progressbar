@@ -40,20 +40,19 @@ import widgets
 
 # Test to see if we are in an IPython session.
 def _is_ipython_notebook():
-    False
-    #for key in ['KernelApp','IPKernelApp']:
-    #    try:
-    #        if get_ipython().config[key]['parent_appname'] == "ipython-notebook":
-    #            return True
-    #    except (NameError, KeyError):
-    #        pass
-    #try:
-    #    from ipykernel.zmqshell import ZMQInteractiveShell
-    #    if isinstance(get_ipython(), ZMQInteractiveShell):
-    #        return True
-    #except NameError:
-    #    pass
-    #return False
+    for key in ['KernelApp','IPKernelApp']:
+        try:
+            if get_ipython().config[key]['parent_appname'] == "ipython-notebook":
+                return True
+        except (NameError, KeyError):
+            pass
+    try:
+        from ipykernel.zmqshell import ZMQInteractiveShell
+        if isinstance(get_ipython(), ZMQInteractiveShell):
+            return True
+    except NameError:
+        pass
+    return False
 
 
 ipython_notebook_css = """
@@ -193,30 +192,33 @@ class ProgressBar(object):
             # Also add a function that removes progressbar output from the cells
             js = '''
                   // %s -- used to remove this code blob in the end
-                  IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
-                      // filter by uuid-strings
-                      var myfilter = function(output) {
-                          var nuids = uuids.length;
-                          for (var i=0; i<nuids; i++) {
-                              if (output.hasOwnProperty('html')) {
-                                  if (output.html.indexOf(uuids[i]) != -1) {
-                                      return false;
-                                  }
-                              }
-                              if (output.hasOwnProperty('javascript')) {
-                                  if (output.javascript.indexOf(uuids[i]) != -1) {
-                                      return false;
-                                  }
-                              }
-                          }
-                          // keep all others
-                          return true;
-                      };
+                  require("notebook/js/outputarea", function() {
+                    console.log("setting up cleanProgressBar");
+                    IPython.OutputArea.prototype.cleanProgressBar = function(uuids) {
+                        // filter by uuid-strings
+                        var myfilter = function(output) {
+                            var nuids = uuids.length;
+                            for (var i=0; i<nuids; i++) {
+                                if (output.hasOwnProperty('html')) {
+                                    if (output.html.indexOf(uuids[i]) != -1) {
+                                        return false;
+                                    }
+                                }
+                                if (output.hasOwnProperty('javascript')) {
+                                    if (output.javascript.indexOf(uuids[i]) != -1) {
+                                        return false;
+                                    }
+                                }
+                            }
+                            // keep all others
+                            return true;
+                        };
 
-                      // Filter the ouputs
-                      this.outputs = this.outputs.filter(myfilter);
-                };
-                ''' % self.uuid
+                        // Filter the ouputs
+                        this.outputs = this.outputs.filter(myfilter);
+                    };
+                });
+            ''' % self.uuid
             display(Javascript(js))
 
     def __call__(self, iterable):
